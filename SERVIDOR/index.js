@@ -18,6 +18,7 @@ const getcanciones = async () => {
 //devuelve la lista completa las canciones 
 app.get("/canciones", async (req, res) => {
   const canciones = await getcanciones(); 
+  console.log(canciones);
   res.json(canciones);
 });
 
@@ -37,7 +38,7 @@ app.get("/canciones/:id", async (req, res) => {
 //codigo HTML
 const getsongforedit = (song) => {
   return `
-    <form onsubmit="nuevaCancion();">
+    <form onsubmit="editarCancion();">
       <input type="text" id="cancion" placeholder="Canción" value="${song.cancion || ''}" />
       <input type="text" id="artista" placeholder="Artista" value="${song.artista || ''}" />
       <input type="text" id="tono" placeholder="Tono" value="${song.tono || ''}" />
@@ -53,10 +54,10 @@ app.get("/formulario/:id", async (req, res) => {
 });
 //POST agregar nueva cancion 
 app.post("/canciones", async (req, res) => {
-  const { formSong } = req.body; 
-  const { cancion, artista, tono } = formSong;
+  const formSong  = req.body; 
+  const {id, cancion, artista, tono } = formSong;
   const newSong = {
-    id: nanoid(),
+    id: id,
     cancion,
     artista,
     tono,
