@@ -1,15 +1,149 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image" href="https://w7.pngwing.com/pngs/690/149/png-transparent-computer-icons-music-sound-k-song-miscellaneous-blue-text.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Canciones</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Document</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
     integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+</head>
+
+<body>
+  <div class="container mt-5 w-25" id="newsong">
+    <form onsubmit="nuevaCancion();">
+      <div class="form-group">
+        <input type="text" id="cancion" class="form-control" placeholder="Canción" />
+      </div>
+      <div class="form-group">
+        <input type="text" id="artista" class="form-control" placeholder="Artista" />
+      </div>
+      <div class="form-group">
+        <input type="text" id="tono" class="form-control" placeholder="Tono" />
+      </div>
+      <button type="submit" class="btn btn-primary" id="agregar">Agregar</button>
+    </form>
+  </div>
+  <div id="ListaCanciones">
+    <hr />
+    <hr />
+    <h2>Tabla de canciones &#127908;</h2>
+
+    <div class="container pt-5 w-75">
+      <table class="table table-dark">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Canción</th>
+            <th scope="col">Artista</th>
+            <th scope="col">Tono</th>
+            <th scope="col">-</th>
+          </tr>
+        </thead>
+      </table>
+      <tbody id="cuerpo"></tbody>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</body>
+
 </html>
+
+<style>
+  body {
+    text-align: center;
+    background: #283593;
+    color: white;
+  }
+</style>
+
+<script>
+  let url = "http://localhost:5000/canciones";
+  let tbody = document.getElementById("cuerpo");
+  let cancion = document.getElementById("cancion");
+  let artista = document.getElementById("artista");
+  let tono = document.getElementById("tono");
+  let newsongbody = document.getElementById("newsong");
+
+  let canciones = [];
+  window.onload = getData();
+
+  async function getData() {
+    await axios.get(url).then((data) => {
+      canciones = data.data;
+      tbody.innerHTML = "";
+      console.log(canciones)
+      canciones.forEach((c, i) => {
+        tbody.innerHTML += `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${c.titulo}</td>
+          <td>${c.artista}</td>
+          <td>${c.tono}</td>
+          <td>
+            <button class="btn btn-warning" onclick="prepararCancion(${i},'${c.id
+          }')">Editar</button>
+            <button class="btn btn-danger" onclick="eliminarCancion(${i},'${c.id
+          }')">Eliminar</button>
+          </td>
+        </tr>
+      `;
+      });
+    });
+    cancion.value = "";
+    artista.value = "";
+    tono.value = "";
+  }
+
+  function nuevaCancion() {
+    cancion;
+    artista;
+    tono;
+    const id = Math.floor(Math.random() * 9999)
+    let data = {
+      id,
+      titulo: cancion.value,
+      artista: artista.value,
+      tono: tono.value,
+    };
+    console.log(data);
+    axios.post(url, data).then(() => getData());
+  }
+
+  function eliminarCancion(i, id) {
+    axios.delete(url + "/" + id).then(() => {
+      alert("Canción " + canciones[i].titulo + " eliminada");
+      getData();
+    });
+  }
+
+  function prepararCancion(i, id) {
+    cancion.value = canciones[i].titulo;
+    artista.value = canciones[i].artista;
+    tono.value = canciones[i].tono;
+    let data = { id, titulo: cancion, artista, tono };
+    axios.get(url + "/formulario/" + id).then((response) => {
+    newsongbody.innerHTML = response.data;
+  });
+    document
+      .getElementById("editar")
+      .setAttribute("onclick", `editarCancion('${id}')`);
+    document.getElementById("agregar").style.display = "none";
+    document.getElementById("editar").style.display = "block";
+  }
+
+  function editarCancion(id) {
+    axios
+      .put(url + "/" + id, {
+        id,
+        titulo: cancion.value,
+        artista: artista.value,
+        tono: tono.value,
+      })
+      .then(() => {
+        getData();
+        document.getElementById("agregar").style.display = "block";
+        document.getElementById("editar").style.display = "none";
+      });
+  }
+</script>

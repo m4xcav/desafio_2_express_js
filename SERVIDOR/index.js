@@ -33,9 +33,27 @@ app.get("/canciones/:id", async (req, res) => {
   res.json(song);
 });
 
+//obtiene cancion por el ID y devuelve html con los datos y el boton de editar 
+//codigo HTML
+const getsongforedit = (song) => {
+  return `
+    <form onsubmit="nuevaCancion();">
+      <input type="text" id="cancion" placeholder="Canción" value="${song.cancion || ''}" />
+      <input type="text" id="artista" placeholder="Artista" value="${song.artista || ''}" />
+      <input type="text" id="tono" placeholder="Tono" value="${song.tono || ''}" />
+      <button type="submit" class="btn btn-primary" id="editar">Editar</button>
+    </form>
+  `;
+};
+app.get("/formulario/:id", async (req, res) => {
+  const { id, titulo, artista, tono } = req.body;
+  const song = { id, titulo, artista, tono }; 
+  const htmlcondata = getsongforedit(song);
+  res.send(htmlcondata);
+});
 //POST agregar nueva cancion 
 app.post("/canciones", async (req, res) => {
-  const { formSong } = req.body; //obtiene los datos del formulario usar useState con [formSong, setFormSong]  para enlazar
+  const { formSong } = req.body; 
   const { cancion, artista, tono } = formSong;
   const newSong = {
     id: nanoid(),
