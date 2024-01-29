@@ -71,9 +71,8 @@
 
   async function getData() {
   await axios.get(url + "/canciones").then((response) => {
-    canciones = response.data; // Corregir aquí
-    console.log(canciones);
-
+    canciones = response.data; 
+    tbody.innerHTML =``;
     canciones.forEach((c, i) => {
       tbody.innerHTML += `
         <tr>
@@ -112,40 +111,52 @@
   }
 
   function eliminarCancion(i, id) {
-    axios.delete(url + "/canciones" + id).then(() => {
-      alert("Canción " + canciones[i].titulo + " eliminada");
-      getData();
-    });
-  }
+    console.log("el array de canciones es: "+canciones)
+  axios.delete(url + "/canciones/" + id).then(() => {
+    alert("Canción " + canciones[i].cancion + " eliminada");
+    getData();
+  }).catch(error => {
+    console.error("Error al eliminar la canción:", error);
+  });
+}
 
   function prepararCancion(i, id) {
-    cancion.value = canciones[i].titulo;
-    artista.value = canciones[i].artista;
-    tono.value = canciones[i].tono;
-    let data = { id, titulo: cancion, artista, tono };
     axios.get(url + "/formulario/" + id).then((response) => {
     newsongbody.innerHTML = response.data;
   });
-    document
-      .getElementById("editar")
-      .setAttribute("onclick", `editarCancion('${id}')`);
-    document.getElementById("agregar").style.display = "none";
-    document.getElementById("editar").style.display = "block";
   }
 
   function editarCancion(id) {
-    axios
-      .put(url + "/canciones/" + id, {
-        id,
-        titulo: cancion.value,
-        artista: artista.value,
-        tono: tono.value,
-      })
-      .then(() => {
-        getData();
-        document.getElementById("agregar").style.display = "block";
-        document.getElementById("editar").style.display = "none";
-      });
-  }
+  let cancion = document.getElementById("fcancion").value;
+  let artista = document.getElementById("fartista").value;
+  let tono = document.getElementById("ftono").value;
+  axios
+    .put(url + "/canciones/" + id, {
+      id,
+      cancion: cancion,
+      artista: artista,
+      tono: tono,
+    })
+    .then(() => {
+      newsongbody.innerHTML = `
+        <form onsubmit="nuevaCancion();">
+          <div class="form-group">
+            <input type="text" id="cancion" class="form-control" placeholder="Titulo" />
+          </div>
+          <div class="form-group">
+            <input type="text" id="artista" class="form-control" placeholder="Artista" />
+          </div>
+          <div class="form-group">
+            <input type="text" id="tono" class="form-control" placeholder="Tono" />
+          </div>
+          <button type="submit" class="btn btn-primary" id="agregar">Agregar</button>
+        </form>
+      `;
+      getData();
+    })
+    .catch(error => {
+      console.error(error);
+    });
+}
 
 </script>

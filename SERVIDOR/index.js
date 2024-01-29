@@ -3,10 +3,20 @@ import { writeFile, readFile } from "node:fs/promises";
 import bodyParser from "body-parser";
 import { nanoid } from "nanoid";
 import cors from "cors";
+import path from "path"; 
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const app = express();
 app.use(bodyParser.json());
 app.use(cors());
+
+app.get("/", (req, res) => {
+  const indexPath = path.join(__dirname, "../proyecto/index.html");
+  res.sendFile(indexPath);
+});
 
 // GET Función para obtener las canciones
 //extrae la lista completa de canciones
@@ -18,7 +28,6 @@ const getcanciones = async () => {
 //devuelve la lista completa las canciones 
 app.get("/canciones", async (req, res) => {
   const canciones = await getcanciones(); 
-  console.log(canciones);
   res.json(canciones);
 });
 
@@ -38,17 +47,19 @@ app.get("/canciones/:id", async (req, res) => {
 //codigo HTML
 const getsongforedit = (song) => {
   return `
-    <form onsubmit="editarCancion();">
-      <input type="text" id="cancion" placeholder="Canción" value="${song.cancion || ''}" />
-      <input type="text" id="artista" placeholder="Artista" value="${song.artista || ''}" />
-      <input type="text" id="tono" placeholder="Tono" value="${song.tono || ''}" />
-      <button type="submit" class="btn btn-primary" id="editar">Editar</button>
+    <form>
+      <input type="text" id="fcancion"  placeholder="${song.cancion || ''}" value="${song.cancion || ''}" />
+      <input type="text" id="fartista" placeholder="${song.artista || ''}" value="${song.artista || ''}" />
+      <input type="text" id="ftono"  placeholder="${song.tono || ''}"  value="${song.tono || ''}"/>
+      <button type="button" class="btn btn-primary" id="editar" onclick="editarCancion(${song.id});">Editar</button>
     </form>
   `;
 };
+
 app.get("/formulario/:id", async (req, res) => {
-  const { id, titulo, artista, tono } = req.body;
-  const song = { id, titulo, artista, tono }; 
+  const id  = req.params.id; 
+  const canciones = await getcanciones(); 
+  const song = canciones.find((song) => song.id.toString() === id.toString());
   const htmlcondata = getsongforedit(song);
   res.send(htmlcondata);
 });
@@ -71,21 +82,16 @@ app.post("/canciones", async (req, res) => {
 //PUT Editar cancion y devuelve el Array actualizado
 app.put("/canciones/:id", async (req, res) => {
   const id = req.params.id;
-
   let canciones = await getcanciones();
-  const song = canciones.find((song) => song.id === id);
+  const song = canciones.find((song) => song.id.toString() === id.toString());
 
   if (!song) {
     res.status(404).json({ message: "song not found" });
   }
-
-  const { formSong } = req.body;  // Aquí se usa la destructuración para obtener el objeto `formSong` del 
-  //cuerpo de la solicitud, poner un useState con [formSong, setFormSong]  para enlazar
-
-  // Actualizar la canción con el contenido de `formSong`
+  const formSong  = req.body;  
   canciones = canciones.map((song) => {
-    if (song.id === id) {
-      return { ...song, ...formSong }; //reemplaza el contenido del array por el nuevo de FormSong
+    if (song.id == id) {
+      return { ...song, ...formSong }; 
     }
     return song;
   });
@@ -97,18 +103,22 @@ app.put("/canciones/:id", async (req, res) => {
 //DELETE cancion y devuelve el Array actualizado
 app.delete("/canciones/:id", async (req, res) => {
   const id = req.params.id;
-
+  console.log("el ID recivido es: " + id);
   let canciones = await getcanciones();
-  const song = canciones.find((song) => song.id === id);
+  const indexToRemove = canciones.findIndex((song) => song.id.toString() === id.toString());
 
-  if (!song) {
+  if (indexToRemove === -1) {
     res.status(404).json({ message: "song not found" });
+    return;
   }
-
-  canciones = canciones.filter((song) => song.id !== id);
-
-  await writeFile("repertorio.json", JSON.stringify(canciones));
-  res.json(canciones);
+  canciones.splice(indexToRemove, 1);
+  try {
+    await writeFile("repertorio.json", JSON.stringify(canciones));
+    res.json(canciones);
+  } catch (error) {
+    console.error("Error al escribir en el archivo:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 app.listen(5000, () => {
